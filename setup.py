@@ -12,6 +12,7 @@ setup(
     description = 'Makes the ConfigParser smarter.',
     long_description = open('README.rst').read() if os.path.isfile('README.rst') else str(),
     py_modules = ["smartparse"],
+    install_requires = ['datetimeparser'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
