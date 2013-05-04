@@ -1,10 +1,23 @@
 import ConfigParser
 import datetime
-from datetimeparser import DateTimeParser
+import timeparser
+
+timeparser.TimeFormats.config(
+    seps=[':'],
+    allow_no_sep=False,
+    )
+timeparser.DateFormats.config(
+    endian=timeparser.BIG_ENDIAN,
+    seps=['.', '/', '-'],
+    allow_no_sep=False,
+    )
+timeparser.DatetimeFormats.config(
+    seps=['_', '-', '/'],
+    allow_no_sep=False,
+    )
 
 
-
-class SmartParserMixin(DateTimeParser):
+class SmartParserMixin:
     """Extension for SafeConfigParser
     
     Adds some useful methods: getlist, gettime, xget and xitems
@@ -23,7 +36,7 @@ class SmartParserMixin(DateTimeParser):
         Expects a ':' as separator. If converting failes raises ValueError.
         Minutes or seconds are dispensable.
         """
-        return self.parsetime(self.get(section, option))
+        return timeparser.parsetime(self.get(section, option))
 
     def getdate(self, section, option):
         """Get option as datetime.date-instance.
@@ -31,7 +44,7 @@ class SmartParserMixin(DateTimeParser):
         Format needs to be 'YEAR.MONTH.DAY'.
         If converting failes raises ValueError.
         """
-        return self.parsedate(self.get(section, option))
+        return timeparser.parsedate(self.get(section, option))
 
     def getdatetime(self, section, option):
         """Get option as datetime.datetime-instance.
@@ -39,7 +52,7 @@ class SmartParserMixin(DateTimeParser):
         Expected format is 'YEAR.MONTH.DAY HOUR[:MINUTE[:SECOND]]'.
         If converting failes raises ValueError.
         """
-        return self.parsedatetime(self.get(section, option))
+        return timeparser.parsedatetime(self.get(section, option))
 
     def getlist(self, section, option):
         """Get option as list.
