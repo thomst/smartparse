@@ -46,7 +46,7 @@ How to use? ::
     date = 2013.04.24
     datetime = 2013.04.24 23:55:00
     list = one two three four
-    smartlist = 3 4.4 1:55 yes 2013.04.24 2013-04-24;01:55
+    smartlist = 3 4.4 1:55 yes 2013.04.24 2013.04.24_01:55
     """
 
     config = SmartParser(allow_no_value=True)

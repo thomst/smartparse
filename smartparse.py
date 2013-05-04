@@ -2,19 +2,71 @@ import ConfigParser
 import datetime
 import timeparser
 
+
+#because of the trial-and-error-concept of smartparse a wide range of formats
+#are very expensive! Try to reduce it to the most obvious formats.
 timeparser.TimeFormats.config(
     seps=[':'],
     allow_no_sep=False,
+    figures=[False, True, True],
     )
 timeparser.DateFormats.config(
     endian=timeparser.BIG_ENDIAN,
-    seps=['.', '/', '-'],
+    seps=['.'],
     allow_no_sep=False,
+    allow_month_name=False,
+    figures=[False, False, True],
     )
 timeparser.DatetimeFormats.config(
-    seps=['_', '-', '/'],
+    seps=[' ', '_'],
     allow_no_sep=False,
     )
+
+def time_config(*args, **kwargs):
+    """
+    Calls timeparser.TimeFormats.config.
+
+    Kwargs:
+        seps (list):        separators formats are generated with
+        figures (list):     list of three boolean that predicts how many
+                            digits the formats have.
+        allow_no_sep (bool):    allows formats without separators ('%d%m%y')
+        microsec (bool):    if True also formats with '%f' for microseconds
+                            are produced.
+    """
+    timeparser.TimeFormats.config(*args, **kwargs)
+
+def date_config(*args, **kwargs):
+    """
+    Calls timeparser.DateFormats.config.
+
+    Kwargs:
+        seps (list):        separators formats are generated with
+        figures (list):     list of three boolean that predicts how many
+                            digits the formats have.
+        allow_no_sep (bool):    allows formats without separators ('%d%m%y')
+        allow_month_name (bool):    if True also '%b' and '%B' are used to
+                                    produce formats.
+        endian (int):               determines the order for dates (s.a.)
+
+    Endianness is the order in which day, month and year constitutes a date.
+    This module defines three constants:
+    LITTLE_ENDIAN (little first):   day, month, year
+    BIG_ENDIAN (biggest first):     year, month, day
+    MIDDLE_ENDIAN (middle first):   month, day, year
+    Use one of these constants as value for the endian-parameter.
+    """
+    timeparser.DateFormats.config(*args, **kwargs)
+
+def datetime_config(*args, **kwargs):
+    """
+    Calls timeparser.DatetimeFormats.config.
+
+    Kwargs:
+        seps (list):        separators formats are generated with
+        allow_no_sep (bool):    allows formats without separators ('%d%m%y')
+    """
+    timeparser.DatetimeFormats.config(*args, **kwargs)
 
 
 class SmartParserMixin:
@@ -73,13 +125,13 @@ class SmartParserMixin:
             try: list[i] = float(list[i])
             except ValueError: pass
             else: continue
-            try: list[i] = self.parsetime(list[i])
+            try: list[i] = timeparser.parsetime(list[i])
             except ValueError: pass
             else: continue
-            try: list[i] = self.parsedate(list[i])
+            try: list[i] = timeparser.parsedate(list[i])
             except ValueError: pass
             else: continue
-            try: list[i] = self.parsedatetime(list[i])
+            try: list[i] = timeparser.parsedatetime(list[i])
             except ValueError: pass
             else: continue
         return list
