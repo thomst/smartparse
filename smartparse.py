@@ -3,19 +3,17 @@ import datetime
 import timeparser
 
 
-#because of the trial-and-error-concept of smartparse a wide range of formats
-#are very expensive! Try to reduce it to the most obvious formats.
 timeparser.TimeFormats.config(
     seps=[':'],
     allow_no_sep=False,
     figures=[False, True, True],
     )
+#TODO: let it default to little-endian;
 timeparser.DateFormats.config(
     endian=timeparser.BIG_ENDIAN,
-    seps=['.'],
+    seps=['.', '/', '-'],
     allow_no_sep=False,
-    allow_month_name=False,
-    figures=[False, False, True],
+    figures=[False, True, True],
     )
 timeparser.DatetimeFormats.config(
     seps=[' ', '_'],
