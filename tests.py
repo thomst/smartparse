@@ -3,6 +3,7 @@ import datetime
 import ConfigParser
 import io
 
+import smartparse
 from smartparse import RawSmartParser
 from smartparse import SmartParser
 from smartparse import SafeSmartParser
@@ -21,6 +22,8 @@ datetime = 2013.04.24 23:55:00
 list = one two three four
 smartlist = 3 4.4 1:55 yes 2013.04.24 2013-04-24_01:55
 """
+
+smartparse.timeparser.ENDIAN.set('big')
 
 
 class TestMixin:

@@ -3,14 +3,13 @@ import datetime
 import timeparser
 
 
+#choose a more restricted config:
 timeparser.TimeFormats.config(
     seps=[':'],
     allow_no_sep=False,
     figures=[False, True, True],
     )
-#TODO: let it default to little-endian;
 timeparser.DateFormats.config(
-    endian=timeparser.BIG_ENDIAN,
     seps=['.', '/', '-'],
     allow_no_sep=False,
     figures=[False, True, True],
@@ -19,6 +18,28 @@ timeparser.DatetimeFormats.config(
     seps=[' ', '_'],
     allow_no_sep=False,
     )
+
+def set_endian(*args, **kwargs):
+    """
+    Calls timeparser.ENDIAN.set.
+    
+    Args:
+        key (string):   everything that matches 'little', 'big' or 'middle'
+
+    If key is None the local-default-order is guessed.
+    """
+    timeparser.ENDIAN.set(*args, **kwargs)
+
+def set_today(*args, **kwargs):
+    """
+    Calls timeparser.TODAY.set.
+    
+    Args:
+        year (int):     year
+        month (int):    month
+        day (int):      day
+    """
+    timeparser.TODAY.set(*args, **kwargs)
 
 def time_config(*args, **kwargs):
     """
