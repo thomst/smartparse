@@ -21,6 +21,7 @@ date = 2013.04.24
 datetime = 2013.04.24 23:55:00
 list = one two three four
 smartlist = 3 4.4 1:55 yes 2013.04.24 2013-04-24_01:55
+typelist = 20:30 4 21:30 5 22:30 6
 """
 
 smartparse.timeparser.ENDIAN.set('big')
@@ -36,14 +37,13 @@ class TestMixin:
         self.assertRaises(ValueError, self.config.gettime, 'SectionTwo', 'date')
         self.assertRaises(ValueError, self.config.getdate, 'SectionTwo', 'time')
         self.assertRaises(ValueError, self.config.getdatetime, 'SectionTwo', 'smartlist')
-        self.assertRaises(ValueError, self.config._checklen, [1])
 
     def test_type(self):
         self.assertIsInstance(self.config.gettime('SectionTwo', 'time'), datetime.time)
         self.assertIsInstance(self.config.getdate('SectionTwo', 'date'), datetime.date)
         self.assertIsInstance(self.config.getdatetime('SectionTwo', 'datetime'), datetime.datetime)
         self.assertIsInstance(self.config.getlist('SectionTwo', 'list'), list)
-        self.assertIsInstance(self.config.getsmartlist('SectionTwo', 'smartlist'), list)
+        self.assertIsInstance(self.config.getxlist('SectionTwo', 'smartlist'), list)
 
         self.assertIsInstance(self.section_one['bool'], bool)
         self.assertIsInstance(self.section_one['int'], int)
@@ -65,6 +65,13 @@ class TestMixin:
         self.assertEqual(self.section_two['smartlist'][2], datetime.time(1,55))
         self.assertEqual(self.section_two['smartlist'][4], datetime.date(2013, 4, 24))
         self.assertEqual(self.section_two['smartlist'][5], datetime.datetime(2013, 4, 24, 1, 55))
+
+    def test_typelist(self):
+        l = self.config.getlist('SectionTwo', 'typelist', types=[smartparse.timeparser.parsetime, int])
+        self.assertIsInstance(l[0], datetime.time)
+        self.assertIsInstance(l[1], int)
+        self.assertIsInstance(l[2], datetime.time)
+        self.assertIsInstance(l[3], int)
 
 
 class RawSmartParserTests(unittest.TestCase, TestMixin):

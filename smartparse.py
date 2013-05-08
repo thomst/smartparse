@@ -3,7 +3,7 @@ import datetime
 import timeparser
 
 
-#choose a more restricted config:
+#choose a more restricted config for parsing times and dates:
 timeparser.TimeFormats.config(
     seps=[':'],
     allow_no_sep=False,
@@ -19,164 +19,113 @@ timeparser.DatetimeFormats.config(
     allow_no_sep=False,
     )
 
-def set_endian(*args, **kwargs):
-    """
-    Calls timeparser.ENDIAN.set.
-    
-    Args:
-        key (string):   everything that matches 'little', 'big' or 'middle'
-
-    If key is None the local-default-order is guessed.
-    """
-    timeparser.ENDIAN.set(*args, **kwargs)
-
-def set_today(*args, **kwargs):
-    """
-    Calls timeparser.TODAY.set.
-    
-    Args:
-        year (int):     year
-        month (int):    month
-        day (int):      day
-    """
-    timeparser.TODAY.set(*args, **kwargs)
-
-def time_config(*args, **kwargs):
-    """
-    Calls timeparser.TimeFormats.config.
-
-    Kwargs:
-        seps (list):        separators formats are generated with
-        figures (list):     list of three boolean that predicts how many
-                            digits the formats have.
-        allow_no_sep (bool):    allows formats without separators ('%d%m%y')
-        microsec (bool):    if True also formats with '%f' for microseconds
-                            are produced.
-    """
-    timeparser.TimeFormats.config(*args, **kwargs)
-
-def date_config(*args, **kwargs):
-    """
-    Calls timeparser.DateFormats.config.
-
-    Kwargs:
-        seps (list):        separators formats are generated with
-        figures (list):     list of three boolean that predicts how many
-                            digits the formats have.
-        allow_no_sep (bool):    allows formats without separators ('%d%m%y')
-        allow_month_name (bool):    if True also '%b' and '%B' are used to
-                                    produce formats.
-        endian (int):               determines the order for dates (s.a.)
-
-    Endianness is the order in which day, month and year constitutes a date.
-    This module defines three constants:
-    LITTLE_ENDIAN (little first):   day, month, year
-    BIG_ENDIAN (biggest first):     year, month, day
-    MIDDLE_ENDIAN (middle first):   month, day, year
-    Use one of these constants as value for the endian-parameter.
-    """
-    timeparser.DateFormats.config(*args, **kwargs)
-
-def datetime_config(*args, **kwargs):
-    """
-    Calls timeparser.DatetimeFormats.config.
-
-    Kwargs:
-        seps (list):        separators formats are generated with
-        allow_no_sep (bool):    allows formats without separators ('%d%m%y')
-    """
-    timeparser.DatetimeFormats.config(*args, **kwargs)
-
 
 class SmartParserMixin:
-    """Extension for SafeConfigParser
+    """Extension for ConfigParser
     
     Adds some useful methods: getlist, gettime, xget and xitems
     """
-    def _checklen(self, list):
-        """Raises ValueError if len(list) is smaller than two.
-        
-        Used in xget, to prevent every value to be converted into a list.
-        """
-        if len(list) < 2: raise ValueError('list is too short')
-        else: return list
+    XGETTERS = ['getint', 'getfloat', 'getboolean', 'gettime', 'getdate',
+            'getdatetime', 'getxlist']
+    XTYPES = [int, float, timeparser.parsetime, timeparser.parsedate,
+            timeparser.parsedatetime]
 
     def gettime(self, section, option):
-        """Get option as datetime.time-instance.
+        """
+        Get option as datetime.time-instance.
 
-        Expects a ':' as separator. If converting failes raises ValueError.
-        Minutes or seconds are dispensable.
+        Args: section and option
+
+        Which formats are accepted depens on the configuration of the
+        timeparser-module. Feel free to change it.
         """
         return timeparser.parsetime(self.get(section, option))
 
     def getdate(self, section, option):
-        """Get option as datetime.date-instance.
+        """
+        Get option as datetime.date-instance.
 
-        Format needs to be 'YEAR.MONTH.DAY'.
-        If converting failes raises ValueError.
+        Args: section and option
+
+        Which formats are accepted depens on the configuration of the
+        timeparser-module. Feel free to change it.
         """
         return timeparser.parsedate(self.get(section, option))
 
     def getdatetime(self, section, option):
-        """Get option as datetime.datetime-instance.
+        """
+        Get option as datetime.datetime-instance.
 
-        Expected format is 'YEAR.MONTH.DAY HOUR[:MINUTE[:SECOND]]'.
-        If converting failes raises ValueError.
+        Args: section and option
+
+        Which formats are accepted depens on the configuration of the
+        timeparser-module. Feel free to change it.
         """
         return timeparser.parsedatetime(self.get(section, option))
 
-    def getlist(self, section, option):
-        """Get option as list.
+    def getlist(self, section, option, minlen=1, types=list()):
         """
-        return self.get(section, option).split()
+        Get option as list.
 
-    def getsmartlist(self, section, option):
-        """Get option as list. Also tries to convert the list-items.
-        
-        List-items are converted either into an int, float
-        or a datetime.time-intance.
+        Args:
+            section and option
+            minlen (int):       minimal lenght the list must have
+            types (list):       list of callables to convert the list-items
+
+        If types is given the nth list-item is converted into the nth type of
+        types. If the last type of types is reached, convertion proceeding
+        with the first type.
+        So using a one-type-list will cause a convertion of all list-items into
+        the same type.
         """
-        list = self.getlist(section, option)
-        for i in range(0, len(list)):
-            try: list[i] = int(list[i])
-            except ValueError: pass
-            else: continue
-            try: list[i] = float(list[i])
-            except ValueError: pass
-            else: continue
-            try: list[i] = timeparser.parsetime(list[i])
-            except ValueError: pass
-            else: continue
-            try: list[i] = timeparser.parsedate(list[i])
-            except ValueError: pass
-            else: continue
-            try: list[i] = timeparser.parsedatetime(list[i])
-            except ValueError: pass
-            else: continue
+        list = self.get(section, option).split()
+        if len(list) < minlen: raise ValueError('list smaller than %s' % minlen)
+        if types:
+            for i in range(len(list)): list[i] = types[i%len(types)](list[i])
         return list
 
-    def xget(self, section, option):
-        """Get option either as int, float, boolean, datetime.time-instance, as
-        smartlist or simply as string.
+    def getxlist(self, section, option, minlen=1, types=list()):
         """
-        try: return self.getint(section, option)
-        except Exception: pass
-        try: return self.getfloat(section, option)
-        except Exception: pass
-        try: return self.getboolean(section, option)
-        except Exception: pass
-        try: return self.gettime(section, option)
-        except Exception: pass
-        try: return self.getdate(section, option)
-        except Exception: pass
-        try: return self.getdatetime(section, option)
-        except Exception: pass
-        try: return self._checklen(self.getsmartlist(section, option))
-        except Exception: pass
+        Get option as list. Also tries to convert the list-items.
+
+        Args:
+            section and option
+            minlen (int):       minimal lenght the list must have
+            types (list):       list of callables to convert the list-items
+
+        List-items are converted into the first type that succeeds. If types is
+        not given XTYPES is used.
+        """
+        list = self.getlist(section, option, minlen)
+        for i in range(len(list)):
+            for t in types or self.XTYPES:
+                try: list[i] = t(list[i])
+                except ValueError: continue
+                else: break
+
+        return list
+
+    def xget(self, section, option, getters=list()):
+        """
+        Get option using the get-methods listed in getters or in XGETTERS.
+
+        Args:
+            section and option
+            getters (list):     list of get-method-names
+        """
+        for method in getters or self.XGETTERS:
+            args = [section, option]
+            if 'list' in method: args.append(2)
+            try: return getattr(self, method)(*args)
+            except ValueError: continue
+
         return self.get(section, option)
 
     def xitems(self, section):
-        """Get items of section using xget to recieve all options.
+        """
+        Get items of section using xget to recieve all options.
+
+        Args: section
         """
         options = self.options(section)
         items = list()
@@ -190,15 +139,25 @@ class RawSmartParser(SmartParserMixin, ConfigParser.RawConfigParser):
     SmartParser based on the ConfigParser.RawConfigParser.
 
     Provides methods to parse options as objects of the datetime-modules, as
-    list or as 'smartlist'.
+    list of strings or as a list of different types.
 
-    Items of a smartlist are automatically tried to converted into different
-    types (such as: int, float, time, date, datetime).
+    It also provides an additional get- and item-method (xget, xitem):
+    These methods automatically try to convert values into different types.
+    Also the values of the getxlist are tried to be converted automatically.
 
-    It also provides additional get- and itme-methods (xget, xitem):
-    xget tries to get the option as one of the following types (in this
-    order): int, float, boolean, time, date, datetime, smartlist.
-    If every type fails the option is given as string.
+    There are two class-attributes: XGETTERS and XTYPES:
+
+        XGETTERS = ['getint', 'getfloat', 'getboolean', 'gettime', 'getdate',
+                'getdatetime', 'getxlist']
+        XTYPES = [int, float, timeparser.parsetime, timeparser.parsedate,
+                timeparser.parsedatetime]
+
+    XGETTERS is a list of method-names that will be tried out by xget to
+    get the option (if getters are not given).
+    XTYPES is a list of callables (recieving a string and returning any kind of
+    type you like) that will be tried out by getxlist to convert the
+    list-items (if types are not given).
+    Always the first succeeding one is used.
     """
 
 
