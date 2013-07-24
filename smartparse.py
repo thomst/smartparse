@@ -7,7 +7,7 @@ import timeparser
 timeparser.TimeFormats.config(
     seps=[':'],
     allow_no_sep=False,
-    figures=[False, True, True],
+    figures=[False, True, True, False],
     )
 timeparser.DateFormats.config(
     seps=['.', '/', '-'],

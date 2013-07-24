@@ -60,6 +60,14 @@ How to use? ::
     section['smartlist'][4]     # datetime.date(2013, 4, 24)
 
 
+Changes v0.5:
+-------------
+*Backwards incompatibility:*
+    getsmartlist became getxlist.
+    Removed the config-methods. Use the timeparser-module directly to change the
+    configuration about parsing time-, date- and datetime-objects.
+
+
 Reporting Bugs
 --------------
 Please report bugs at github issue tracker:
