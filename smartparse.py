@@ -1,5 +1,4 @@
 import ConfigParser
-import datetime
 import timeparser
 
 
@@ -25,10 +24,32 @@ class SmartParserMixin:
     
     Adds some useful methods: getlist, gettime, xget and xitems
     """
-    XGETTERS = ['getint', 'getfloat', 'getboolean', 'gettime', 'getdate',
-            'getdatetime', 'getxlist']
-    XTYPES = [int, float, timeparser.parsetime, timeparser.parsedate,
-            timeparser.parsedatetime]
+    XGETTERS = [
+        'getint',
+        'getfloat',
+        'getboolean',
+        'gettime',
+        'getdate',
+        'getdatetime',
+        'getxlist'
+    ]
+    XTYPES = [
+        int,
+        float,
+        timeparser.parsetime,
+        timeparser.parsedate,
+        timeparser.parsedatetime,
+        timeparser.parsetimedelta
+    ]
+
+    @staticmethod
+    def xtype(value, types):
+        for t in types:
+            try:
+                return t(value)
+            except ValueError:
+                continue
+        return value
 
     def gettime(self, section, option):
         """
@@ -63,6 +84,14 @@ class SmartParserMixin:
         """
         return timeparser.parsedatetime(self.get(section, option))
 
+    def gettimedelta(self, section, option):
+        """
+        Get option as datetime.timedelta-instance.
+
+        Args: section and option
+        """
+        return timeparser.parsetimedelta(self.get(section, option))
+
     def getlist(self, section, option, minlen=1, types=list()):
         """
         Get option as list.
@@ -79,9 +108,11 @@ class SmartParserMixin:
         the same type.
         """
         list = self.get(section, option).split()
-        if len(list) < minlen: raise ValueError('list smaller than %s' % minlen)
+        if len(list) < minlen:
+            raise ValueError('list smaller than %s' % minlen)
         if types:
-            for i in range(len(list)): list[i] = types[i%len(types)](list[i])
+            for i in range(len(list)):
+                list[i] = types[i%len(types)](list[i])
         return list
 
     def getxlist(self, section, option, minlen=1, types=list()):
@@ -96,14 +127,35 @@ class SmartParserMixin:
         List-items are converted into the first type that succeeds. If types is
         not given XTYPES is used.
         """
-        list = self.getlist(section, option, minlen)
-        for i in range(len(list)):
-            for t in types or self.XTYPES:
-                try: list[i] = t(list[i])
-                except ValueError: continue
-                else: break
+        l = self.getlist(section, option, minlen)
+        xlist = list()
+        for value in l:
+            xlist.append(self.xtype(value, types or self.XTYPES))
 
-        return list
+        return xlist
+
+    def getxtype(self, section, option, types=list()):
+        """
+        Get option using the types listed in types or in XTYPES.
+
+        Args:
+            section and option
+            types (list):     list of types
+        """
+        types = types or self.XTYPES
+        return self.xtype(self.get(section, option), types)
+
+    def getxitems(self, section):
+        """
+        Get items of section using getxtype to recieve all options.
+
+        Args: section
+        """
+        options = self.options(section)
+        items = list()
+        for opt in options:
+            items.append((opt, self.getxtype(section, opt)))
+        return items
 
     def xget(self, section, option, getters=list()):
         """
@@ -115,9 +167,12 @@ class SmartParserMixin:
         """
         for method in getters or self.XGETTERS:
             args = [section, option]
-            if 'list' in method: args.append(2)
-            try: return getattr(self, method)(*args)
-            except ValueError: continue
+            if 'list' in method:
+                args.append(2)
+            try:
+                return getattr(self, method)(*args)
+            except ValueError:
+                continue
 
         return self.get(section, option)
 
